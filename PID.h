@@ -9,21 +9,20 @@
 class PID
 {
 	public:
-		PID(double Kp, double Ki, double Kd, double dt): 
-			Kp(Kp), Ki(Ki), Kd(Kd), dt(dt), u(0), e_(0), e__(0){}
+		PID(double Kp, double Ki, double Kd): 
+			Kp(Kp), Ki(Ki), Kd(Kd), u(0), e_(0), e__(0){}
 		PID(){};
 		~PID(){};
-		double control(double target, double sense);
+		double control(double target, double sense, double dt);
 	private:
 		double Kp;
 		double Ki;
 		double Kd;
-		double dt;
 		double u;
 		double e_, e__; // error at t-1 and t-2
 };
 
-double PID::control(double target, double sense)  //"velocity" PID
+double PID::control(double target, double sense, double dt)  //"velocity" PID
 {
 	double e = target - sense;
 	u += (Kp + Ki*dt + Kd/dt)*e - (Kp + 2*Kd/dt)*e_ + Kd/dt*e__;
@@ -34,6 +33,17 @@ double PID::control(double target, double sense)  //"velocity" PID
 }
 
 #endif //PID_H
+
+
+
+
+
+
+
+
+
+
+
 
 
 
