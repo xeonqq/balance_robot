@@ -32,7 +32,7 @@ unsigned int motor2_initiate_pwm=0;
 
 
 //get from motor calibration
-int forward_min_pwm_m1 = 42 +10;
+int forward_min_pwm_m1 = 42;
 int forward_min_pwm_m2 = 55 +10;
 int backward_min_pwm_m1 = -34 -10;
 int backward_min_pwm_m2 = -39 -10;
@@ -110,7 +110,7 @@ void motors_control(int u) // control signal from pid
 		//if (pwm1 < forward_min_pwm_m2)
 		//	pwm2 = forward_min_pwm_m2;
 		//else
-		pwm2 = 1.022*pwm1  - 0.8889;
+		pwm2 = min(1.022*pwm1  - 0.8889, 255);
 
 		digitalWrite(M1,HIGH);	
 		analogWrite(E1, pwm1);   //0~255
@@ -118,9 +118,9 @@ void motors_control(int u) // control signal from pid
 		analogWrite(E2, pwm2);   //0~255
 	}
 	else if (u<0){
-		pwm1 = map(u, -255, 0, -255, backward_min_pwm_m1);  
+		pwm1 = map(u, -255, 0, -255, -forward_min_pwm_m1);//backward_min_pwm_m1);  
 		//pwm1 = backward_min_pwm_m1 + u;
-		pwm2 = 1.0299*pwm1  + 0.5467;
+		pwm2 = max(1.0299*pwm1  + 0.5467, -255);
 		//pwm1 = min(pwm1, -255);
 		//pwm2 = min(pwm2, -255);
 		digitalWrite(M1,LOW);         

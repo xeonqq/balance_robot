@@ -9,18 +9,18 @@
 #include "MPU6050.h"
 #include <EnableInterrupt.h>
 #include "PID.h"
-#include "EKF.h"
+#include "Kalman.h"
 
 #include "motor.h"
 #include "balance_robot.h"
 #include <EEPROM.h>
 #include "EEPROMAnything.h"
-
+#include "utils.h"
 // class default I2C address is 0x68
 // specific I2C addresses may be passed as a parameter here
 // AD0 low = 0x68 (default for InvenSense evaluation board)
 // AD0 high = 0x69
-MPU6050 accelgyro;
+MPU6050 mpu;
 
 
 int16_t ax, ay, az;
@@ -29,7 +29,7 @@ int16_t gx, gy, gz;
 
 PID pid;
 PID pid_rpm;
-EKF ekf;
+Kalman kalman;
 
 double m1_rpm = 0;
 double m2_rpm = 0;
@@ -45,7 +45,6 @@ typedef struct config_t
 
 
 pid_config pid_values;
-
 
 
 String inputString = "";         // a string to hold incoming data
@@ -77,20 +76,19 @@ void setup()
   Serial1.println(F("Press 'Enter' to confirm\n"));
   
   Serial.println("Initializing I2C devices...");
-  accelgyro.initialize();
+  mpu.initialize();
 
   // verify connection
   Serial.println("Testing device connections...");
-  Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
-
-
+  Serial.println(mpu.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
 
   pid = PID(pid_values.Kp, pid_values.Ki, pid_values.Kd);
-  pid_rpm = PID(5, 0.5, 0);
-
-  ekf.init(0, 0.274);  //initial variance 30 deg
 
   initMotors();
+
+  mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+  double angleByAcc = atan((double)ax/az);
+  kalman.setAngle(angleByAcc);
 
   //calibrate();
 
@@ -99,7 +97,7 @@ void setup()
 
 void balance(double angle_sensed)
 {
-  double target_angle = -0.65;
+  double target_angle = 2.3;
   double u = pid.control(target_angle, angle_sensed, ms_10);
 
   motors_control(u);
@@ -115,49 +113,29 @@ void balance(double angle_sensed)
   //Serial.print("\trpm2:\t"); Serial.print(m2_rpm);
 }
 
+double pitch = 0;
+void process200HzTask() {
 
-void process100HzTask() {
+  double rot_y = -(double)gy / GYRO_SENS; //to degree
 
-
-  //kalman takes 1ms
-  double acc_x = (double)ax / ACC_SENS;
-  double rot_x = (double)gx / GYRO_SENS; //to radius
-  Serial.println(rot_x, 10);
-  //reference: https://github.com/ethz-asl/kalibr/wiki/IMU-Noise-Model-and-Intrinsics
-  //need to convert degree to radians
-  double Q = sqr(0.017453 * gyro_random_walk_noise * sqrt(ms_10) * rot_x) + sqr(0.017453 * gyro_white_noise_density / sqrt(ms_10));
-  double R =  sqr(accelerometer_noise_density / sqrt(ms_10));
-  double angle;
-
-  ekf.predict(rot_x, Q, ms_10); //dt=10ms
-
-  ekf.correct(acc_x, R);
-
-  angle = ekf.getAngle();
-
-  angle = angle / M_PI * 180; // convert to degree
-
-
-
-
+  double angleByAcc = atan((double)ax/az);
+  double angle = kalman.getAngle(angleByAcc*Rad2Deg, rot_y, ms_5);
+  
   //if error less than 60 degree, try to balance
   if (abs(angle) < 60)
     balance(angle);
   else
     motors_stop();
 
-  /*
-     Serial.print("\t");
-     Serial.print("cnt1:\t"); Serial.print(encoder_M1_cnt);
-     Serial.print("\t");
-     Serial.print("cnt2:\t"); Serial.print(encoder_M2_cnt);
-     Serial.print("\t");
-   */
+  //pitch +=  rot_y*ms_5;
+  //pitch = angleByAcc*Rad2Deg*0.98+pitch*0.02;
+  //Serial.print("\t acc_A\t"); Serial.print(angleByAcc*Rad2Deg);
+  //Serial.print("\t comlementary\t"); Serial.print(pitch);
   Serial.print("\t angle\t"); Serial.print(angle);
   Serial.print("\n");
 
 }
-
+void process100HzTask() {}
 void process50HzTask() {}
 
 void process10HzTask1() {}
@@ -193,9 +171,6 @@ void processBluetooth()
     }
   }
   if (stringComplete) {
-
-    // clear the string:
-
 
     if (inputString.startsWith("p") || inputString.startsWith("P"))
     {
@@ -243,14 +218,17 @@ void loop()
 
   //critical task
   //processIMU();
-   accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+   mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
   // ================================================================
   // 100Hz task loop
   // ================================================================
-  if (deltaTime >= 10000) {
+  if (deltaTime >= 5000) {
 
     frameCounter++;
-    process100HzTask();
+    process200HzTask();
+    if (frameCounter % TASK_100HZ == 0) {  //  50 Hz tasks
+      process100HzTask();
+    }
     // ================================================================
     // 50Hz task loop
     // ================================================================
@@ -273,7 +251,7 @@ void loop()
 
     previousTime = currentTime;
   }
-  if (frameCounter >= 100) {
+  if (frameCounter >= 200) {
     frameCounter = 0;
   }
 }
