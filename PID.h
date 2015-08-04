@@ -14,6 +14,7 @@ class PID
 		PID(){};
 		~PID(){};
 		double control(double target, double sense, double dt);
+    void reset();
 	private:
 		double Kp;
 		double Ki;
@@ -32,7 +33,14 @@ double PID::control(double target, double sense, double dt)  //"velocity" PID
 	return u;
 }
 
+void PID::reset()
+{
+  e_ = 0;
+  e__= 0;
+}
+
 #endif //PID_H
+
 
 
 

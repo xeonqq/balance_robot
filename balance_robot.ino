@@ -37,10 +37,10 @@ double m2_rpm = 0;
 #define  VALID 0xABCD
 typedef struct config_t
 {
-    int valid;
-    double Kp;
-    double Ki;
-    double Kd;
+	int valid;
+	double Kp;
+	double Ki;
+	double Kd;
 } pid_config;
 
 
@@ -52,209 +52,179 @@ boolean stringComplete = false;  // whether the string is complete
 
 void setup()
 {
-  // join I2C bus (I2Cdev library doesn't do this automatically)
-  Wire.begin();
+	// join I2C bus (I2Cdev library doesn't do this automatically)
+	Wire.begin();
 
-  EEPROM_readAnything(0, pid_values); 
+	EEPROM_readAnything(0, pid_values); 
 
-  if (pid_values.valid != VALID){
-    pid_values.Kp = 4.5;
-    pid_values.Ki = 1;
-    pid_values.Kd = 0.002;
-  }
-  // initialize serial communication
-  // (38400 chosen because it works as well at 8MHz as it does at 16MHz, but
-  // it's really up to you depending on your project)
-  Serial.begin(38400);
-  Serial1.begin(9600);  //bluetooth
-  inputString.reserve(20);
-  Serial1.println(F("\nPress 'q' to see current PID settings"));
-  Serial1.println(F("Press 'p' ,then type a number to change p value"));
-  Serial1.println(F("Press 'i' ,then type a number to change i value"));
-  Serial1.println(F("Press 'd' ,then type a number to change d value"));
-  Serial1.println(F("Press 'w' to save pid to EEPROM"));
-  Serial1.println(F("Press 'Enter' to confirm\n"));
-  
-  Serial.println("Initializing I2C devices...");
-  mpu.initialize();
+	if (pid_values.valid != VALID){
+		pid_values.Kp = 4.5;
+		pid_values.Ki = 1;
+		pid_values.Kd = 0.002;
+	}
+	// initialize serial communication
+	// (38400 chosen because it works as well at 8MHz as it does at 16MHz, but
+	// it's really up to you depending on your project)
+	Serial.begin(38400);
+	Serial1.begin(9600);  //bluetooth
+	inputString.reserve(20);
+	Serial1.println(F("\nPress 'q' to see current PID settings"));
+	Serial1.println(F("Press 'p' ,then type a number to change p value"));
+	Serial1.println(F("Press 'i' ,then type a number to change i value"));
+	Serial1.println(F("Press 'd' ,then type a number to change d value"));
+	Serial1.println(F("Press 'w' to save pid to EEPROM"));
+	Serial1.println(F("Press 'Enter' to confirm\n"));
 
-  // verify connection
-  Serial.println("Testing device connections...");
-  Serial.println(mpu.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+	Serial.println("Initializing I2C devices...");
+	mpu.initialize();
 
-  pid = PID(pid_values.Kp, pid_values.Ki, pid_values.Kd);
+	// verify connection
+	Serial.println("Testing device connections...");
+	Serial.println(mpu.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
 
-  initMotors();
+	pid = PID(pid_values.Kp, pid_values.Ki, pid_values.Kd);
 
-  mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-  double angleByAcc = atan((double)ax/az);
-  kalman.setAngle(angleByAcc);
+	initMotors();
 
-  //calibrate();
+	mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+	double angleByAcc = atan2(ax, az);
+	kalman.setAngle(angleByAcc);
+
+	//calibrate();
+
+	kalmanTimer = micros();
+	pidTimer = kalmanTimer;
+	imuTimer = millis();
+	encoderTimer = imuTimer;
+	reportTimer = imuTimer;
 
 }
 
 
-void balance(double angle_sensed)
+void balance(double angle_sensed, double dt)
 {
-  double target_angle = 2.3;
-  double u = pid.control(target_angle, angle_sensed, ms_10);
+	double target_angle = 1.7;
+	double u = pid.control(target_angle, angle_sensed, dt);
 
-  motors_control(u);
-
-  //:Serial.print("\tu:\t"); Serial.print(u1);
-  //Serial.print("\t");
-  //Serial.print("cnt1:\t"); Serial.print(encoder_M1_cnt);
-  //Serial.print("\t");
-  //Serial.print("cnt2:\t"); Serial.print(encoder_M2_cnt);
-  //Serial.print("\tspeed1:\t"); Serial.print(pwm1);
-  //Serial.print("\tspeed2:\t"); Serial.print(pwm2);
-  //Serial.print("\trpm1:\t"); Serial.print(m1_rpm);
-  //Serial.print("\trpm2:\t"); Serial.print(m2_rpm);
+	motors_control(u);
 }
 
-double pitch = 0;
-void process200HzTask() {
+//pitch +=  rot_y*ms_5;
+//pitch = angleByAcc*Rad2Deg*0.98+pitch*0.02;
+//Serial.print("\t acc_A\t"); Serial.print(angleByAcc*Rad2Deg);
+//Serial.print("\t comlementary\t"); Serial.print(pitch);
 
-  double rot_y = -(double)gy / GYRO_SENS; //to degree
+//rpm(&m1_rpm,&m2_rpm, 1);
+//Serial.print("\trpm1:\t"); Serial.print(m1_rpm);
+//Serial.print("\trpm2:\t"); Serial.print(m2_rpm);
 
-  double angleByAcc = atan((double)ax/az);
-  double angle = kalman.getAngle(angleByAcc*Rad2Deg, rot_y, ms_5);
-  
-  //if error less than 60 degree, try to balance
-  if (abs(angle) < 60)
-    balance(angle);
-  else
-    motors_stop();
-
-  //pitch +=  rot_y*ms_5;
-  //pitch = angleByAcc*Rad2Deg*0.98+pitch*0.02;
-  //Serial.print("\t acc_A\t"); Serial.print(angleByAcc*Rad2Deg);
-  //Serial.print("\t comlementary\t"); Serial.print(pitch);
-  Serial.print("\t angle\t"); Serial.print(angle);
-  Serial.print("\n");
-
-}
-void process100HzTask() {}
-void process50HzTask() {}
-
-void process10HzTask1() {}
-
-void process1HzTask()
-{
-  processBluetooth();
-  //rpm(&m1_rpm,&m2_rpm, 1);
-  //Serial.print("\trpm1:\t"); Serial.print(m1_rpm);
-  //Serial.print("\trpm2:\t"); Serial.print(m2_rpm);
-  //Serial.print("\tpwm1:\t"); Serial.print(motor1_initiate_pwm);
-  //Serial.print("\tpwm2:\t"); Serial.print(motor2_initiate_pwm);
-}
-
-void processIMU()
-{
-  //getMotion6 takes 3ms
-  //Serial.print("ay:\t"); Serial.print(ay);
-
-}
 void processBluetooth()
 {
-  while (Serial1.available()) {
-    // get the new byte:
-    char inChar = (char)Serial1.read();
-    // add it to the inputString:
-    inputString += inChar;
-    //Serial.println(inChar);
-    // if the incoming character is a newline, set a flag
-    // so the main loop can do something about it:
-    if (inChar == '\n' || inChar == '\r') {
-      stringComplete = true;
-    }
-  }
-  if (stringComplete) {
+	while (Serial1.available()) {
+		// get the new byte:
+		char inChar = (char)Serial1.read();
+		// add it to the inputString:
+		inputString += inChar;
+		//Serial.println(inChar);
+		// if the incoming character is a newline, set a flag
+		// so the main loop can do something about it:
+		if (inChar == '\n' || inChar == '\r') {
+			stringComplete = true;
+		}
+	}
+	if (stringComplete) {
 
-    if (inputString.startsWith("p") || inputString.startsWith("P"))
-    {
-      pid_values.Kp = inputString.substring(1).toFloat();
-      Serial.print("P in pid set to:\t"); Serial.println(pid_values.Kp);
-      Serial1.print("P in pid set to:\t"); Serial1.println(pid_values.Kp);
-      pid = PID(pid_values.Kp, pid_values.Ki, pid_values.Kd);
-    }
-    if (inputString.startsWith("i") || inputString.startsWith("I"))
-    {
-      pid_values.Ki = inputString.substring(1).toFloat();
-      Serial.print("I in pid set to:\t"); Serial.println(pid_values.Ki);
-      Serial1.print("I in pid set to:\t"); Serial1.println(pid_values.Ki);
-      pid = PID(pid_values.Kp, pid_values.Ki, pid_values.Kd);
-    }
-    if (inputString.startsWith("d") || inputString.startsWith("D"))
-    {
-      pid_values.Kd = inputString.substring(1).toFloat();
-      Serial.print("D in pid set to:\t"); Serial.println(pid_values.Kd, 5);
-      Serial1.print("D in pid set to:\t"); Serial1.println(pid_values.Kd, 5);
-      pid = PID(pid_values.Kp, pid_values.Ki, pid_values.Kd);
-    }
-    if (inputString.startsWith("q") || inputString.startsWith("Q"))
-    {
-      Serial.print("P:"); Serial.print(pid_values.Kp);Serial.print("\tI:"); Serial.print(pid_values.Ki); Serial.print("\tD:");Serial.println(pid_values.Kd, 5);
-      Serial1.print("P:"); Serial1.print(pid_values.Kp);Serial1.print("\tI:"); Serial1.print(pid_values.Ki); Serial1.print("\tD:");Serial1.println(pid_values.Kd, 5);
-    }
-    if (inputString.startsWith("w") || inputString.startsWith("W"))
-    {
-      pid_values.valid = VALID;
-      EEPROM_writeAnything(0, pid_values);
-      Serial1.print(F("saved in EEPROM\n"));
-    }
-    
-    inputString = "";
-    stringComplete = false;
-  }
+		if (inputString.startsWith("p") || inputString.startsWith("P"))
+		{
+			pid_values.Kp = inputString.substring(1).toFloat();
+			Serial.print("P in pid set to:\t"); Serial.println(pid_values.Kp);
+			Serial1.print("P in pid set to:\t"); Serial1.println(pid_values.Kp);
+			pid = PID(pid_values.Kp, pid_values.Ki, pid_values.Kd);
+		}
+		if (inputString.startsWith("i") || inputString.startsWith("I"))
+		{
+			pid_values.Ki = inputString.substring(1).toFloat();
+			Serial.print("I in pid set to:\t"); Serial.println(pid_values.Ki);
+			Serial1.print("I in pid set to:\t"); Serial1.println(pid_values.Ki);
+			pid = PID(pid_values.Kp, pid_values.Ki, pid_values.Kd);
+		}
+		if (inputString.startsWith("d") || inputString.startsWith("D"))
+		{
+			pid_values.Kd = inputString.substring(1).toFloat();
+			Serial.print("D in pid set to:\t"); Serial.println(pid_values.Kd, 5);
+			Serial1.print("D in pid set to:\t"); Serial1.println(pid_values.Kd, 5);
+			pid = PID(pid_values.Kp, pid_values.Ki, pid_values.Kd);
+		}
+		if (inputString.startsWith("q") || inputString.startsWith("Q"))
+		{
+			Serial.print("P:"); Serial.print(pid_values.Kp);Serial.print("\tI:"); Serial.print(pid_values.Ki); Serial.print("\tD:");Serial.println(pid_values.Kd, 5);
+			Serial1.print("P:"); Serial1.print(pid_values.Kp);Serial1.print("\tI:"); Serial1.print(pid_values.Ki); Serial1.print("\tD:");Serial1.println(pid_values.Kd, 5);
+		}
+		if (inputString.startsWith("w") || inputString.startsWith("W"))
+		{
+			pid_values.valid = VALID;
+			EEPROM_writeAnything(0, pid_values);
+			Serial1.print(F("saved in EEPROM\n"));
+		}
+
+		inputString = "";
+		stringComplete = false;
+	}
+}
+void stopAndReset()
+{
+  motors_stop();
+  pid.reset();
 }
 
 void loop()
 {
+	double dt;
 
-  currentTime = micros();
-  deltaTime = currentTime - previousTime;
+	mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
-  //critical task
-  //processIMU();
-   mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-  // ================================================================
-  // 100Hz task loop
-  // ================================================================
-  if (deltaTime >= 5000) {
 
-    frameCounter++;
-    process200HzTask();
-    if (frameCounter % TASK_100HZ == 0) {  //  50 Hz tasks
-      process100HzTask();
-    }
-    // ================================================================
-    // 50Hz task loop
-    // ================================================================
-    if (frameCounter % TASK_50HZ == 0) {  //  50 Hz tasks
-      process50HzTask();
-    }
+	//calculate pitch by kalman
+	double rot_y = -(double)gy / GYRO_SENS; //to degree
+	double angleByAcc = atan2(ax, az);
 
-    // ================================================================
-    // 10Hz task loop
-    // ================================================================
-    if (frameCounter % TASK_10HZ == 0) {  //   10 Hz tasks
-      process10HzTask1();
-    }
-    // ================================================================
-    // 1Hz task loop
-    // ================================================================
-    if (frameCounter % TASK_1HZ == 0) {  //   1 Hz tasks
-      process1HzTask();
-    }
+	currentTime = micros(); 
+	dt = (currentTime - kalmanTimer) / 1000000.0f;
+	double pitch = kalman.getAngle(angleByAcc*Rad2Deg, rot_y, dt);
+	kalmanTimer = currentTime;
 
-    previousTime = currentTime;
-  }
-  if (frameCounter >= 200) {
-    frameCounter = 0;
-  }
+
+
+	//if error less than 35 degree, try to balance
+	if (abs(pitch) < 35){
+		currentTime = micros(); 
+		dt = (currentTime - pidTimer) / 1000000.0f;
+		balance(pitch, dt);
+		pidTimer = currentTime;
+	}
+	else{
+		stopAndReset();
+	}
+
+
+	currentTime = millis();
+	if (currentTime - reportTimer >= 100)  //100 ms
+	{
+		Serial.print("\t angle\t"); Serial.print(pitch);
+    //Serial.print("\t acc_A\t"); Serial.print(angleByAcc*Rad2Deg);
+		Serial.print("\n"); 
+		if (frameCounter % 10 == 0){ //every 1 sec
+			processBluetooth();
+			frameCounter = 0;
+		}
+		frameCounter++;
+		reportTimer = currentTime;
+	}
+
 }
+
+
+
 
 
 

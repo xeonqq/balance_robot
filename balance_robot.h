@@ -1,18 +1,12 @@
-#define TASK_100HZ 2
-#define TASK_50HZ 4
-#define TASK_10HZ 20
-#define TASK_1HZ 200
+/* Used for timing */
+uint32_t currentTime;
+static uint32_t kalmanTimer; // Timer used for the Kalman filter
+static uint32_t pidTimer; // Timer used for the PID loop
+static uint32_t imuTimer; // This is used to set a delay between sending IMU values
+static uint32_t encoderTimer; // Timer used used to determine when to update the encoder values
+static uint32_t reportTimer; // Timer used used to determine when to update the encoder values
 
-#define ms_10 0.01  //unit second 
-
-#define ms_5 0.005  //unit second 
-
-// main loop time variable
-unsigned long previousTime = 0;
-unsigned long currentTime = 0;
-unsigned long deltaTime = 0;
-
-unsigned long frameCounter = 0; // main loop executive frame counter
+uint16_t frameCounter=0;
 /*
 The output scale for any setting is [-32768, +32767] for each of the six axes. The default setting in the I2Cdevlib class is +/- 2g for the accel and +/- 250 deg/sec for the gyro.
 so 
@@ -31,13 +25,6 @@ so
 #define ACC_SENS 1671.8367346938774   //  (16384/9.8)  // =1 m/s^2
 
 
-double gyro_random_walk_noise = 4.0e-06;
-
-//taken from datasheet
-double gyro_white_noise_density = 0.005;  //   degree/s/√Hz
-
-//taken from datasheet
-double accelerometer_noise_density = 0.00392;  //400 mug/√Hz -> convert to m/s^2/√Hz
 
 
 

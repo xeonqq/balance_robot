@@ -32,7 +32,7 @@ unsigned int motor2_initiate_pwm=0;
 
 
 //get from motor calibration
-int forward_min_pwm_m1 = 42;
+int forward_min_pwm_m1 = 42+10;
 int forward_min_pwm_m2 = 55 +10;
 int backward_min_pwm_m1 = -34 -10;
 int backward_min_pwm_m2 = -39 -10;
@@ -201,6 +201,7 @@ void calibrate()  // use with python script on pc, send (pwm, rpm1, rpm2) to pc
 
 
 #endif
+
 
 
 
