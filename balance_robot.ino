@@ -46,6 +46,10 @@ typedef struct config_t
 
 pid_config pid_values;
 
+double u; //pid control output
+
+double target_angle = 1.7;
+
 
 String inputString = "";         // a string to hold incoming data
 boolean stringComplete = false;  // whether the string is complete
@@ -100,11 +104,10 @@ void setup()
 
 }
 
-
 void balance(double angle_sensed, double dt)
 {
-	double target_angle = 1.7;
-	double u = pid.control(target_angle, angle_sensed, dt);
+
+	u = pid.control(target_angle, angle_sensed, dt);
 
 	motors_control(u);
 }
@@ -173,6 +176,7 @@ void processBluetooth()
 }
 void stopAndReset()
 {
+  u = 0;
   motors_stop();
   pid.reset();
 }
@@ -196,21 +200,21 @@ void loop()
 
 
 	//if error less than 35 degree, try to balance
-	if (abs(pitch) < 35){
-		currentTime = micros(); 
+  currentTime = micros(); 
+	if (abs(pitch) < 35){	
 		dt = (currentTime - pidTimer) / 1000000.0f;
-		balance(pitch, dt);
-		pidTimer = currentTime;
+		balance(pitch, dt);	
 	}
 	else{
 		stopAndReset();
 	}
-
+  pidTimer = currentTime;
 
 	currentTime = millis();
 	if (currentTime - reportTimer >= 100)  //100 ms
 	{
 		Serial.print("\t angle\t"); Serial.print(pitch);
+		Serial.print("\t control\t"); Serial.print(u);
     //Serial.print("\t acc_A\t"); Serial.print(angleByAcc*Rad2Deg);
 		Serial.print("\n"); 
 		if (frameCounter % 10 == 0){ //every 1 sec

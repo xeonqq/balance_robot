@@ -37,6 +37,7 @@ void PID::reset()
 {
   e_ = 0;
   e__= 0;
+  u = 0;
 }
 
 #endif //PID_H
