@@ -4,7 +4,7 @@ The robot can balance itself on two wheels and can handle small disturbance. Fur
 
 ![robot][robot_pic]
 
-[robot_pic]: https://github.com/xeonqq/balance_robot/blob/kalman/robot_selfie.jpg "Robot Selfie"
+[robot_pic]: https://github.com/xeonqq/balance_robot/blob/kalman/pics/robot_selfie.jpg "Robot Selfie"
 
 Video: [here](https://youtu.be/0947fcgWL5s)
 
@@ -26,7 +26,7 @@ Video: [here](https://youtu.be/0947fcgWL5s)
 8. [Self designed 3D-printed robot structure](http://www.thingiverse.com/thing:969603)
 
 ##Dependency
-MPU6050 lib from [i2cdevlib](http://github.com/jrowberg/i2cdevlib.git). Yu need to place the lib in the ~/sketchbook/libraries/ folder
+MPU6050 lib from [i2cdevlib](http://github.com/jrowberg/i2cdevlib.git). You need to place the lib in the ~/sketchbook/libraries/ folder
 
 ##Software Key Components
 1. *Kalman filter*: to fuse the data from accerometer and gyro and output angle. The implementation is referenced from TKJElectronics's [Balanduino](https://github.com/TKJElectronics/KalmanFilter).
