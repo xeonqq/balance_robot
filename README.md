@@ -25,8 +25,11 @@ Video: [here](https://youtu.be/0947fcgWL5s)
 
 8. [Self designed 3D-printed robot structure](http://www.thingiverse.com/thing:969603)
 
+##Pin Connection
+Refer to [motor.h](https://github.com/xeonqq/balance_robot/blob/kalman/motor.h). Leonardo Serial1 is used to connect the Bluetooth.
+
 ##Dependency
-MPU6050 lib from [i2cdevlib](http://github.com/jrowberg/i2cdevlib.git). You need to place the lib in the ~/sketchbook/libraries/ folder
+MPU6050 lib from [i2cdevlib](http://github.com/jrowberg/i2cdevlib.git) and [arduino-pinchangeint](https://code.google.com/p/arduino-pinchangeint/downloads/list). You need to place the libs in the ~/sketchbook/libraries/ folder
 
 ##Software Key Components
 1. *Kalman filter*: to fuse the data from accerometer and gyro and output angle. The implementation is referenced from TKJElectronics's [Balanduino](https://github.com/TKJElectronics/KalmanFilter).
