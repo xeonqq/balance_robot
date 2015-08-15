@@ -2,10 +2,11 @@
 
 The robot can balance itself on two wheels and can handle small disturbance. Further work shall be done on remote controlling to move it.
 
-![alt text][robot_pic]
+![robot][robot_pic]
 
-[robot_pic]: https://github.com/xeonqq/balance_robot/robot_selfie.jpg "Robot Selfie"
+[robot_pic]: https://github.com/xeonqq/balance_robot/blob/kalman/robot_selfie.jpg "Robot Selfie"
 
+Video:
 <a href="https://youtu.be/sWVQpQ8RNGM
 " target="_blank"><img src="https://i.ytimg.com/vi/sWVQpQ8RNGM/2.jpg?time=1439640081480" 
 alt="IMAGE ALT TEXT HERE" width="240" height="180" border="10" /></a>
@@ -34,7 +35,7 @@ alt="IMAGE ALT TEXT HERE" width="240" height="180" border="10" /></a>
 
 4. *Motor control*: control use PWM signal, a bit tuning is done to make both motors run at same RPM given same PWM value. And the motor has a minimum PWM to be applied, because under certain minimum PWM value the motor does not move at all.
 
-5. *Python Debug*: python script analysis/serial_plot.py can plot the data from Serial port in real time. But the message has to follow the format *name\t value\t name\t value\t...\n*
+5. *Python Debug*: python script analysis/serial_plot.py can plot the data from Serial port in real time. But the message has to follow the format *"name\t value\t name\t value\t...\n"*
 
 ##Problem encountered
 This motor can not supply enough torque when the robot deviate its angle too much, so the robot can still fall down when angle error is big. 
