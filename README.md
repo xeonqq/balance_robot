@@ -6,10 +6,7 @@ The robot can balance itself on two wheels and can handle small disturbance. Fur
 
 [robot_pic]: https://github.com/xeonqq/balance_robot/blob/kalman/robot_selfie.jpg "Robot Selfie"
 
-Video:
-<a href="https://youtu.be/sWVQpQ8RNGM
-" target="_blank"><img src="https://i.ytimg.com/vi/sWVQpQ8RNGM/2.jpg?time=1439640081480" 
-alt="IMAGE ALT TEXT HERE" width="240" height="180" border="10" /></a>
+Video: [here]("https://youtu.be/sWVQpQ8RNGM)
 
 ##Hardwares
 1. [Arduino Leonardo Board](https://www.arduino.cc/en/Main/ArduinoBoardLeonardo)
