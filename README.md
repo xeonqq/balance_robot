@@ -6,7 +6,7 @@ The robot can balance itself on two wheels and can handle small disturbance. Fur
 
 [robot_pic]: https://github.com/xeonqq/balance_robot/blob/kalman/robot_selfie.jpg "Robot Selfie"
 
-Video: [here](https://youtu.be/sWVQpQ8RNGM)
+Video: [here](https://youtu.be/0947fcgWL5s)
 
 ##Hardwares
 1. [Arduino Leonardo Board](https://www.arduino.cc/en/Main/ArduinoBoardLeonardo)
@@ -22,6 +22,8 @@ Video: [here](https://youtu.be/sWVQpQ8RNGM)
 6. [HC-06 BlueTooth Module](http://item.taobao.com/item.htm?spm=a312a.7700846.9.121.rql2Wm&id=19087365613&_u=f3e5nn58d41)
 
 7. [MPU-6050 6DOF IMU](https://detail.tmall.com/item.htm?id=18635718636&toSite=main)
+
+8. [Self designed 3D-printed robot structure](http://www.thingiverse.com/thing:969603)
 
 ##Software Key Components
 1. *Kalman filter*: to fuse the data from accerometer and gyro and output angle. The implementation is referenced from TKJElectronics's [Balanduino](https://github.com/TKJElectronics/KalmanFilter).
