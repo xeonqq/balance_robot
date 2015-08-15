@@ -22,8 +22,8 @@ unsigned char INT_M1 = 10;  //encoder interrupt pin for motor1
 unsigned char INT_M2 = 11;  //encoder interrupt pin for motor2
 
 
-unsigned long encoder_M1_cnt = 0;
-unsigned long encoder_M2_cnt = 0;
+volatile unsigned long encoder_M1_cnt = 0;
+volatile unsigned long encoder_M2_cnt = 0;
 unsigned long last_encoder_M1_cnt=0;
 unsigned long last_encoder_M2_cnt=0;
 
@@ -32,10 +32,11 @@ unsigned int motor2_initiate_pwm=0;
 
 
 //get from motor calibration
-int forward_min_pwm_m1 = 42+10;
+int forward_min_pwm_m1 = 43;//42+10;
 int forward_min_pwm_m2 = 55 +10;
-int backward_min_pwm_m1 = -50;//-34 -10;
+int backward_min_pwm_m1 = -41;//-34 -10;
 int backward_min_pwm_m2 = -39 -10;
+
 
 void encoder_M1()
 {
@@ -88,6 +89,7 @@ void motor1_pwm(int u) //-255 ~ 255
 	}
 }
 
+
 void motor2_pwm(int u)
 {
 	if (u > 0){  //  FORWARD 
@@ -100,6 +102,7 @@ void motor2_pwm(int u)
 	}
 }
 
+
 void motors_control(int u) // control signal from pid
 {
 	u = min(255, max(u, -255));  //constrain value between -255 to 255
@@ -111,7 +114,6 @@ void motors_control(int u) // control signal from pid
 		//	pwm2 = forward_min_pwm_m2;
 		//else
 		pwm2 = min(1.022*pwm1  - 0.8889, 255);
-
 		digitalWrite(M1,HIGH);	
 		analogWrite(E1, pwm1);   //0~255
 		digitalWrite(M2, LOW);
@@ -128,14 +130,12 @@ void motors_control(int u) // control signal from pid
 		digitalWrite(M2, HIGH);
 		analogWrite(E2, -pwm2);   //0~255
 	}
-	else
+	else{
 		motors_stop();
-
-	//Serial.print("\t");
-	//Serial.print(pwm1);
-	//Serial.print("\t");
-	//Serial.print(pwm2);
+	}
 }
+
+
 
 void motor1_move(int u) //-255 ~ 255
 {
@@ -151,7 +151,7 @@ void motor1_move(int u) //-255 ~ 255
 
 void motor2_move(int u)
 {
-  int real_speed = map(abs(u), 0, 255, forward_min_pwm_m2, 255);  
+	int real_speed = map(abs(u), 0, 255, forward_min_pwm_m2, 255);  
 	if (u > 0){  //  FORWARD 
 		digitalWrite(M2, LOW);
 	}
@@ -162,14 +162,14 @@ void motor2_move(int u)
 }
 
 
-
+//To find the function f(pwm)=rpm, and then try to make both motor run at same rpm when pwm are same
 void calibrate()  // use with python script on pc, send (pwm, rpm1, rpm2) to pc
 {
 	int i;
 	double rpm1, rpm2;
 	bool m1_finish;
 	bool m2_finish;
-	
+
 	String inputString = "";         // a string to hold incoming data
 	while(inputString != "hello motor")
 	{

@@ -1,3 +1,6 @@
+/* Copyright (C) 2015 Qian Qian. All rights reserved.
+ E-mail   :  xeonqq@gmail.com
+ */
 
 // Arduino Wire library is required if I2Cdev I2CDEV_ARDUINO_WIRE implementation
 // is used in I2Cdev.h
@@ -48,7 +51,7 @@ pid_config pid_values;
 
 double u; //pid control output
 
-double target_angle = 1.7;
+double target_angle = 0.9;
 
 
 String inputString = "";         // a string to hold incoming data
@@ -62,9 +65,9 @@ void setup()
 	EEPROM_readAnything(0, pid_values); 
 
 	if (pid_values.valid != VALID){
-		pid_values.Kp = 4.5;
-		pid_values.Ki = 1;
-		pid_values.Kd = 0.002;
+		pid_values.Kp = 13;
+		pid_values.Ki = 30;
+		pid_values.Kd = 0.001;
 	}
 	// initialize serial communication
 	// (38400 chosen because it works as well at 8MHz as it does at 16MHz, but
@@ -112,14 +115,6 @@ void balance(double angle_sensed, double dt)
 	motors_control(u);
 }
 
-//pitch +=  rot_y*ms_5;
-//pitch = angleByAcc*Rad2Deg*0.98+pitch*0.02;
-//Serial.print("\t acc_A\t"); Serial.print(angleByAcc*Rad2Deg);
-//Serial.print("\t comlementary\t"); Serial.print(pitch);
-
-//rpm(&m1_rpm,&m2_rpm, 1);
-//Serial.print("\trpm1:\t"); Serial.print(m1_rpm);
-//Serial.print("\trpm2:\t"); Serial.print(m2_rpm);
 
 void processBluetooth()
 {
@@ -214,8 +209,8 @@ void loop()
 	if (currentTime - reportTimer >= 100)  //100 ms
 	{
 		Serial.print("\t angle\t"); Serial.print(pitch);
-		Serial.print("\t control\t"); Serial.print(u);
-    //Serial.print("\t acc_A\t"); Serial.print(angleByAcc*Rad2Deg);
+		//Serial.print("\t control\t"); Serial.print(u);
+		//Serial.print("\t acc_A\t"); Serial.print(angleByAcc*Rad2Deg);
 		Serial.print("\n"); 
 		if (frameCounter % 10 == 0){ //every 1 sec
 			processBluetooth();
