@@ -1,0 +1,9 @@
+[submodule "lib/i2cdevlib"]
+	path = lib/i2cdevlib
+	url = https://github.com/jrowberg/i2cdevlib/
+[submodule "lib/PinChangeInt"]
+	path = lib/PinChangeInt
+	url = https://github.com/GreyGnome/PinChangeInt
+[submodule "lib/EnableInterrupt"]
+	path = lib/EnableInterrupt
+	url = https://github.com/GreyGnome/EnableInterrupt
