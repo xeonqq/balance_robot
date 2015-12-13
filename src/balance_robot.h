@@ -6,7 +6,13 @@ static uint32_t imuTimer; // This is used to set a delay between sending IMU val
 static uint32_t encoderTimer; // Timer used used to determine when to update the encoder values
 static uint32_t reportTimer; // Timer used used to determine when to update the encoder values
 
-uint16_t frameCounter=0;
+//10 ms
+const uint32_t TASK_100HZ = 10;
+//100 ms
+const uint32_t TASK_10HZ = 100;
+//1000 ms
+const uint32_t TASK_1HZ = 1000;
+
 /*
 The output scale for any setting is [-32768, +32767] for each of the six axes. The default setting in the I2Cdevlib class is +/- 2g for the accel and +/- 250 deg/sec for the gyro.
 so 

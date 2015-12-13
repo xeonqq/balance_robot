@@ -9,27 +9,49 @@
 class PID
 {
 	public:
-		PID(double Kp, double Ki, double Kd): 
+		PID(float Kp, float Ki, float Kd): 
 			Kp(Kp), Ki(Ki), Kd(Kd), u(0), e_(0), e__(0){}
 		PID(){};
 		~PID(){};
-		double control(double target, double sense, double dt);
+		float control(float target, float sense, float dt);
+		float cascade_control(float target_angle, float sensed_angle, float sensed_w, float dt);
     void reset();
 	private:
-		double Kp;
-		double Ki;
-		double Kd;
-		double u;
-		double e_, e__; // error at t-1 and t-2
+		float Kp;
+		float Ki;
+		float Kd;
+		float u;
+		float e_, e__; // error at t-1 and t-2
+		static const float Kp_w = 6.0f;
+		static const float MAX_CTRL_VAR = 210.0f;
 };
 
-double PID::control(double target, double sense, double dt)  //"velocity" PID
+float PID::control(float target, float sense, float dt)  //"velocity" PID
 {
-	double e = target - sense;
+	float e = target - sense;
 	u += (Kp + Ki*dt + Kd/dt)*e - (Kp + 2*Kd/dt)*e_ + Kd/dt*e__;
 
 	e_ = e;
 	e__ = e_;
+	return u;
+}
+
+//angle in degrees, sensed_w in degrees/sec
+float PID::cascade_control(float target_angle, float sensed_angle, float sensed_w, float dt)  //"velocity" PID
+{
+	//stage 1
+	//the expected angular velocity, given the current error in angle
+	//larger the Kp_w, larger the control value
+	float target_w = (target_angle - sensed_angle)*Kp_w;
+
+	//stage 2
+	float e_w = target_w - sensed_w;
+	u += (Kp + Ki*dt + Kd/dt)*e_w - (Kp + 2*Kd/dt)*e_ + Kd/dt*e__;
+	
+	u = constrain(u, -MAX_CTRL_VAR, MAX_CTRL_VAR);
+
+	e_ = e_w;
+	e__ = e_w;
 	return u;
 }
 

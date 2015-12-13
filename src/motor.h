@@ -30,6 +30,8 @@ unsigned long last_encoder_M2_cnt=0;
 unsigned int motor1_initiate_pwm=0;
 unsigned int motor2_initiate_pwm=0;
 
+const uint16_t MOTOR_INIT_PWM = 45;
+uint16_t pwm;
 
 //get from motor calibration
 int forward_min_pwm_m1 = 43;//42+10;
@@ -56,7 +58,6 @@ void rpm(double *rpm1, double *rpm2, double dt)  //dt = interval of measurement
 	last_encoder_M1_cnt = encoder_M1_cnt;
 	last_encoder_M2_cnt = encoder_M2_cnt;
 }
-
 
 
 void initMotors()
@@ -135,32 +136,30 @@ void motors_control(int u) // control signal from pid
 	}
 }
 
-
-
-void motor1_move(int u) //-255 ~ 255
+void motors_control_direct(int16_t u) // control signal from pid
 {
-	int real_speed = map(abs(u), 0, 255, forward_min_pwm_m1, 255);  
-	if (u > 0){  //  FORWARD
+	 //constrain value between -255 to 255
+	//Serial.print(u);
+	if (u>0){
+		pwm = MOTOR_INIT_PWM + u;
+		constrain(pwm, 0, 255);
 		digitalWrite(M1,HIGH);	
-	}
-	else{	// BACKWARD
-		digitalWrite(M1,LOW);         
-	}
-	analogWrite(E1, real_speed);   //0~255
-}
-
-void motor2_move(int u)
-{
-	int real_speed = map(abs(u), 0, 255, forward_min_pwm_m2, 255);  
-	if (u > 0){  //  FORWARD 
+		analogWrite(E1, pwm);   //0~255
 		digitalWrite(M2, LOW);
+		analogWrite(E2, pwm);   //0~255
 	}
-	else{	// BACKWARD
+	else if (u<0){
+		pwm = -(-MOTOR_INIT_PWM + u);
+		constrain(pwm, 0, 255);
+		digitalWrite(M1,LOW);         
+		analogWrite(E1, pwm);   //0~255
 		digitalWrite(M2, HIGH);
+		analogWrite(E2, pwm);   //0~255
 	}
-	analogWrite(E2, real_speed);   //0~255
+	else{
+		motors_stop();
+	}
 }
-
 
 //To find the function f(pwm)=rpm, and then try to make both motor run at same rpm when pwm are same
 void calibrate()  // use with python script on pc, send (pwm, rpm1, rpm2) to pc
