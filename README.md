@@ -6,7 +6,12 @@ The robot can balance itself on two wheels and can handle small disturbance. Fur
 
 [robot_pic]: https://github.com/xeonqq/balance_robot/blob/kalman/pics/robot_selfie.jpg "Robot Selfie"
 
-Video: [here](https://youtu.be/0947fcgWL5s)
+Video: [here](https://youtu.be/lMieABcfPiE)
+
+##Compilation
+Use CMake to compile the code
+
+For Arduino Leonardo, I have to use the upload.py for uploading the binary. For other Arduino boards, use "make upload".
 
 ##Hardwares
 1. [Arduino Leonardo Board](https://www.arduino.cc/en/Main/ArduinoBoardLeonardo)
@@ -34,11 +39,11 @@ MPU6050 lib from [i2cdevlib](http://github.com/jrowberg/i2cdevlib.git) and [ardu
 ##Software Key Components
 1. *Kalman filter*: to fuse the data from accerometer and gyro and output angle. The implementation is referenced from TKJElectronics's [Balanduino](https://github.com/TKJElectronics/KalmanFilter).
 
-2. *PID control*: "velocity" PID which can prevent integral windup (Further theory refer to this [link](http://lorien.ncl.ac.uk/ming/digicont/digimath/dpid1.htm)). Target is to stablize the robot around angle 0. 
+2. *PID control*: "velocity" PID which can prevent integral windup (Further theory refer to this [link](http://lorien.ncl.ac.uk/ming/digicont/digimath/dpid1.htm)). Target is to stablize the robot around angle 0. In this version of software I used a two-level controller to gain better performance.
 
 3. *Tune PID via Bluetooth*: I downloaded [BlueTerm](https://play.google.com/store/apps/details?id=es.pymasde.blueterm&hl=en) to pair and communicate with arduino. Can Tune the PID without wire.
 
-4. *Motor control*: control use PWM signal, a bit tuning is done to make both motors run at same RPM given same PWM value. And the motor has a minimum PWM to be applied, because under certain minimum PWM value the motor does not move at all.
+4. *Motor control*: control use PWM signal. The motor has a minimum PWM to be applied, because under certain minimum PWM value the motor does not move at all.
 
 5. *Python Debug*: python script analysis/serial_plot.py can plot the data from Serial port in real time. But the message has to follow the format *"name\t value\t name\t value\t...\n"*
 
