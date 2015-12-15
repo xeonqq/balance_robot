@@ -33,12 +33,6 @@ unsigned int motor2_initiate_pwm=0;
 const uint16_t MOTOR_INIT_PWM = 45;
 uint16_t pwm;
 
-//get from motor calibration
-int forward_min_pwm_m1 = 43;//42+10;
-int forward_min_pwm_m2 = 55 +10;
-int backward_min_pwm_m1 = -41;//-34 -10;
-int backward_min_pwm_m2 = -39 -10;
-
 
 void encoder_M1()
 {
@@ -104,45 +98,13 @@ void motor2_pwm(int u)
 }
 
 
-void motors_control(int u) // control signal from pid
-{
-	u = min(255, max(u, -255));  //constrain value between -255 to 255
-	//Serial.print(u);
-	int pwm1, pwm2;
-	if (u>0){
-		pwm1 = map(u, 0, 255, forward_min_pwm_m1, 255);  
-		//if (pwm1 < forward_min_pwm_m2)
-		//	pwm2 = forward_min_pwm_m2;
-		//else
-		pwm2 = min(1.022*pwm1  - 0.8889, 255);
-		digitalWrite(M1,HIGH);	
-		analogWrite(E1, pwm1);   //0~255
-		digitalWrite(M2, LOW);
-		analogWrite(E2, pwm2);   //0~255
-	}
-	else if (u<0){
-		pwm1 = map(u, -255, 0, -255, backward_min_pwm_m1);
-		//pwm1 = backward_min_pwm_m1 + u;
-		pwm2 = max(1.0299*pwm1  + 0.5467, -255);
-		//pwm1 = min(pwm1, -255);
-		//pwm2 = min(pwm2, -255);
-		digitalWrite(M1,LOW);         
-		analogWrite(E1, -pwm1);   //0~255
-		digitalWrite(M2, HIGH);
-		analogWrite(E2, -pwm2);   //0~255
-	}
-	else{
-		motors_stop();
-	}
-}
-
 void motors_control_direct(int16_t u) // control signal from pid
 {
 	 //constrain value between -255 to 255
 	//Serial.print(u);
 	if (u>0){
 		pwm = MOTOR_INIT_PWM + u;
-		constrain(pwm, 0, 255);
+		pwm = constrain(pwm, 0, 255);
 		digitalWrite(M1,HIGH);	
 		analogWrite(E1, pwm);   //0~255
 		digitalWrite(M2, LOW);
@@ -150,7 +112,7 @@ void motors_control_direct(int16_t u) // control signal from pid
 	}
 	else if (u<0){
 		pwm = -(-MOTOR_INIT_PWM + u);
-		constrain(pwm, 0, 255);
+		pwm = constrain(pwm, 0, 255);
 		digitalWrite(M1,LOW);         
 		analogWrite(E1, pwm);   //0~255
 		digitalWrite(M2, HIGH);
@@ -158,6 +120,45 @@ void motors_control_direct(int16_t u) // control signal from pid
 	}
 	else{
 		motors_stop();
+	}
+}
+
+void motors_control_sep(int16_t m1, int16_t m2) // control signal from pid
+{
+	 //constrain value between -255 to 255
+	//Serial.print(u);
+	if (m1>0){
+		m1 = MOTOR_INIT_PWM + m1;
+		m1 = constrain(m1, 0, 255);
+		digitalWrite(M1,HIGH);	
+		analogWrite(E1, pwm);   //0~255
+	}
+	else if(m1<0){
+		m1 = -(-MOTOR_INIT_PWM + m1);
+		m1 = constrain(m1, 0, 255);
+		digitalWrite(M1,LOW);         
+		analogWrite(E1, m1);   //0~255
+	}
+	else{ //stop
+		digitalWrite(M1,HIGH);	
+		analogWrite(E1, 0);   //0~255
+	}
+
+	if (m2>0){
+		m2 = MOTOR_INIT_PWM + m2;
+		m2 = constrain(m2, 0, 255);
+		digitalWrite(M2, LOW);
+		analogWrite(E2, m2);   //0~255
+	}
+	else if (m2<0){
+		m2 = -(-MOTOR_INIT_PWM + m2);
+		m2 = constrain(m2, 0, 255);
+		digitalWrite(M2, HIGH);
+		analogWrite(E2, m2);   //0~255
+	}
+	else{ //stop
+		digitalWrite(M2,HIGH);	
+		analogWrite(E2, 0);   //0~255
 	}
 }
 

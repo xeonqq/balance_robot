@@ -31,7 +31,8 @@ int16_t gx, gy, gz;
 
 
 PID pid;
-PID pid_rpm;
+PID pid_yaw;
+
 Kalman kalman;
 
 float m1_rpm = 0;
@@ -48,12 +49,17 @@ typedef struct config_t
 } pid_config;
 
 
-pid_config pid_values;
+pid_config balance_pid_values;
+
+pid_config yaw_rate_pid_values;
 
 float u; //pid control output
 
+//in degree
 float target_angle = 0.9;
 
+//in degree/s
+float target_yaw_rate = 0;
 
 String inputString = "";         // a string to hold incoming data
 boolean stringComplete = false;  // whether the string is complete
@@ -63,9 +69,13 @@ void setup()
 	// join I2C bus (I2Cdev library doesn't do this automatically)
 	Wire.begin();
 
-	pid_values.Kp = 0.4f;
-	pid_values.Ki = 20.0f;
-	pid_values.Kd = 0.0f;
+	balance_pid_values.Kp = 0.4f;
+	balance_pid_values.Ki = 20.0f;
+	balance_pid_values.Kd = 0.0f;
+
+	yaw_rate_pid_values.Kp = 1.0f;
+	yaw_rate_pid_values.Ki = 0.0f;
+	yaw_rate_pid_values.Kd = 0.0f;
 
 	// initialize serial communication
 	// (38400 chosen because it works as well at 8MHz as it does at 16MHz, but
@@ -87,7 +97,9 @@ void setup()
 	Serial.println("Testing device connections...");
 	Serial.println(mpu.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
 
-	pid = PID(pid_values.Kp, pid_values.Ki, pid_values.Kd);
+	pid = PID(balance_pid_values.Kp, balance_pid_values.Ki, balance_pid_values.Kd);
+	
+	pid_yaw = PID(yaw_rate_pid_values.Kp, yaw_rate_pid_values.Ki, yaw_rate_pid_values.Kd);
 
 	initMotors();
 
@@ -145,35 +157,35 @@ void processBluetooth()
 
 		if (inputString.startsWith("p") || inputString.startsWith("P"))
 		{
-			pid_values.Kp = inputString.substring(1).toFloat();
-			Serial.print("P in pid set to:\t"); Serial.println(pid_values.Kp);
-			Serial1.print("P in pid set to:\t"); Serial1.println(pid_values.Kp);
-			pid = PID(pid_values.Kp, pid_values.Ki, pid_values.Kd);
+			balance_pid_values.Kp = inputString.substring(1).toFloat();
+			Serial.print("P in pid set to:\t"); Serial.println(balance_pid_values.Kp);
+			Serial1.print("P in pid set to:\t"); Serial1.println(balance_pid_values.Kp);
+			pid = PID(balance_pid_values.Kp, balance_pid_values.Ki, balance_pid_values.Kd);
 		}
 		if (inputString.startsWith("i") || inputString.startsWith("I"))
 		{
-			pid_values.Ki = inputString.substring(1).toFloat();
-			Serial.print("I in pid set to:\t"); Serial.println(pid_values.Ki);
-			Serial1.print("I in pid set to:\t"); Serial1.println(pid_values.Ki);
-			pid = PID(pid_values.Kp, pid_values.Ki, pid_values.Kd);
+			balance_pid_values.Ki = inputString.substring(1).toFloat();
+			Serial.print("I in pid set to:\t"); Serial.println(balance_pid_values.Ki);
+			Serial1.print("I in pid set to:\t"); Serial1.println(balance_pid_values.Ki);
+			pid = PID(balance_pid_values.Kp, balance_pid_values.Ki, balance_pid_values.Kd);
 		}
 		if (inputString.startsWith("d") || inputString.startsWith("D"))
 		{
-			pid_values.Kd = inputString.substring(1).toFloat();
-			Serial.print("D in pid set to:\t"); Serial.println(pid_values.Kd, 5);
-			Serial1.print("D in pid set to:\t"); Serial1.println(pid_values.Kd, 5);
-			pid = PID(pid_values.Kp, pid_values.Ki, pid_values.Kd);
+			balance_pid_values.Kd = inputString.substring(1).toFloat();
+			Serial.print("D in pid set to:\t"); Serial.println(balance_pid_values.Kd, 5);
+			Serial1.print("D in pid set to:\t"); Serial1.println(balance_pid_values.Kd, 5);
+			pid = PID(balance_pid_values.Kp, balance_pid_values.Ki, balance_pid_values.Kd);
 		}
 		if (inputString.startsWith("q") || inputString.startsWith("Q"))
 		{
-			Serial.print("P:"); Serial.print(pid_values.Kp);Serial.print("\tI:"); Serial.print(pid_values.Ki); Serial.print("\tD:");Serial.println(pid_values.Kd, 5);
-			Serial1.print("P:"); Serial1.print(pid_values.Kp);Serial1.print("\tI:"); Serial1.print(pid_values.Ki); Serial1.print("\tD:");Serial1.println(pid_values.Kd, 5);
+			Serial.print("P:"); Serial.print(balance_pid_values.Kp);Serial.print("\tI:"); Serial.print(balance_pid_values.Ki); Serial.print("\tD:");Serial.println(balance_pid_values.Kd, 5);
+			Serial1.print("P:"); Serial1.print(balance_pid_values.Kp);Serial1.print("\tI:"); Serial1.print(balance_pid_values.Ki); Serial1.print("\tD:");Serial1.println(balance_pid_values.Kd, 5);
 		}
 		/*
 		if (inputString.startsWith("w") || inputString.startsWith("W"))
 		{
-			pid_values.valid = VALID;
-			EEPROM_writeAnything(0, pid_values);
+			balance_pid_values.valid = VALID;
+			EEPROM_writeAnything(0, balance_pid_values);
 			Serial1.print(F("saved in EEPROM\n"));
 		}*/
 
