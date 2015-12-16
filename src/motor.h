@@ -131,7 +131,7 @@ void motors_control_sep(int16_t m1, int16_t m2) // control signal from pid
 		m1 = MOTOR_INIT_PWM + m1;
 		m1 = constrain(m1, 0, 255);
 		digitalWrite(M1,HIGH);	
-		analogWrite(E1, pwm);   //0~255
+		analogWrite(E1, m1);   //0~255
 	}
 	else if(m1<0){
 		m1 = -(-MOTOR_INIT_PWM + m1);

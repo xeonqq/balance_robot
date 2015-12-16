@@ -118,6 +118,7 @@ void setup()
 
 }
 
+int16_t yaw_du = 0;
 void balance(float angle_sensed, float dt)
 {
 
@@ -135,7 +136,8 @@ void balance(float angle_sensed, float dt)
 
 	//Serial.println(pwm);
 
-	motors_control_direct(u);
+	//motors_control_direct(u);
+	motors_control_sep(u+yaw_du, u-yaw_du);
 }
 
 
@@ -180,6 +182,18 @@ void processBluetooth()
 		{
 			Serial.print("P:"); Serial.print(balance_pid_values.Kp);Serial.print("\tI:"); Serial.print(balance_pid_values.Ki); Serial.print("\tD:");Serial.println(balance_pid_values.Kd, 5);
 			Serial1.print("P:"); Serial1.print(balance_pid_values.Kp);Serial1.print("\tI:"); Serial1.print(balance_pid_values.Ki); Serial1.print("\tD:");Serial1.println(balance_pid_values.Kd, 5);
+		}
+		if (inputString.startsWith("y") || inputString.startsWith("Y"))
+		{
+			yaw_du = inputString.substring(1).toInt();
+			Serial1.print("yaw_du set to:\t"); Serial1.println(yaw_du);
+
+		}
+		if (inputString.startsWith("f") || inputString.startsWith("f"))
+		{
+			target_angle = inputString.substring(1).toFloat();
+			Serial1.print("target_angle set to:\t"); Serial1.println(target_angle);
+
 		}
 		/*
 		if (inputString.startsWith("w") || inputString.startsWith("W"))
