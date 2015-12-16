@@ -51,7 +51,7 @@ float PID::cascade_control(float target_angle, float sensed_angle, float sensed_
 	u = constrain(u, -MAX_CTRL_VAR, MAX_CTRL_VAR);
 
 	e_ = e_w;
-	e__ = e_w;
+	e__ = e_;
 	return u;
 }
 
