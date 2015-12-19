@@ -5,6 +5,15 @@
 #ifndef PID_H
 #define PID_H
 
+#define applyDeadband(value, deadband)  \
+  if(abs(value) < deadband) {           \
+    value = 0;                          \
+  } else if(value > 0){                 \
+    value -= deadband;                  \
+  } else if(value < 0){                 \
+    value += deadband;                  \
+  }
+
 
 class PID
 {
@@ -38,13 +47,17 @@ float PID::control(float target, float sense, float dt)  //"velocity" PID
 	return u;
 }
 
+
 //angle in degrees, sensed_w in degrees/sec
 float PID::cascade_control(float target_angle, float sensed_angle, float sensed_w, float dt)  //"velocity" PID
 {
 	//stage 1
 	//the expected angular velocity, given the current error in angle
 	//larger the Kp_w, larger the control value
-	float target_w = (target_angle - sensed_angle)*Kp_w;
+	float angle_err = target_angle - sensed_angle;
+	//if angle error < 0.2 degree don't control
+	applyDeadband(angle_err, 0.1);
+	float target_w = angle_err*Kp_w;
 
 	//stage 2
 	float e_w = target_w - sensed_w;
