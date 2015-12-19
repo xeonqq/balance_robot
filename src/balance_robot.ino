@@ -122,7 +122,8 @@ void setup()
 	//calibrate();
 
 	kalmanTimer = millis();
-	pidTimer = kalmanTimer;
+	previous100HzTimer = kalmanTimer;
+	previous200HzTimer = kalmanTimer;
 	imuTimer = millis();
 	encoderTimer = imuTimer;
 	reportTimer = imuTimer;
@@ -270,31 +271,38 @@ void loop()
 
 	currentTime = millis(); 
 
-	G_Dt = (currentTime - kalmanTimer);
+	G_Dt = (currentTime - kalmanTimer)/1000.0f;
 	//kalman filter is running at MCU's full speed
-	float pitch = kalman.getAngle(angleByAcc*Rad2Deg, rot_y, G_Dt/1000.0f);
+	float pitch = kalman.getAngle(angleByAcc*Rad2Deg, rot_y, G_Dt);
 	kalmanTimer = currentTime;
 
 
-	if (currentTime - pidTimer > TASK_100HZ)
+	if (currentTime - previous200HzTimer> TASK_200HZ)
 	{
-		G_Dt = (currentTime - pidTimer)/1000.0f;
-
-		filtered_rot_z = lpf_rot_z.apply(rot_z, G_Dt);
-		//Serial.print(rot_z); Serial.print('\t');
-		//Serial.print(filtered_rot_z); Serial.println();
+		G_Dt = (currentTime - previous200HzTimer)/1000.0f;
 
 		//if error less than 35 degree, try to balance
 		if (abs(pitch) < 35){	
 			balance(pitch);	
-			yaw_control();
 			motors_control_sep(u-yaw_du, u+yaw_du);
 		}
 		else{
 
 			stopAndReset();
 		}
-		pidTimer = currentTime;
+		previous200HzTimer = currentTime;
+	}
+
+	if (currentTime - previous100HzTimer > TASK_100HZ)
+	{
+		G_Dt = (currentTime - previous100HzTimer)/1000.0f;
+
+		filtered_rot_z = lpf_rot_z.apply(rot_z, G_Dt);
+
+		if (abs(pitch) < 35){	
+			yaw_control();
+		}
+		previous100HzTimer = currentTime;
 	}
 
 

@@ -1,11 +1,14 @@
 /* Used for timing */
 uint32_t currentTime;
 static uint32_t kalmanTimer; // Timer used for the Kalman filter
-static uint32_t pidTimer; // Timer used for the PID loop
+static uint32_t previous200HzTimer; // 200hz Timer used for the balance loop
+static uint32_t previous100HzTimer; // 100hz Timer used for the yaw control loop
 static uint32_t imuTimer; // This is used to set a delay between sending IMU values
 static uint32_t encoderTimer; // Timer used used to determine when to update the encoder values
 static uint32_t reportTimer; // Timer used used to determine when to update the encoder values
 
+//5 ms
+const uint32_t TASK_200HZ = 5;
 //10 ms
 const uint32_t TASK_100HZ = 10;
 //100 ms
