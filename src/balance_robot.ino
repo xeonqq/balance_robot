@@ -67,7 +67,9 @@ pid_config yaw_rate_pid_values;
 float u; //pid control output
 
 //in degree
-float target_angle = -0.5f;
+float offset_angle = -0.5f;
+//in degree
+float target_angle = 0.0f + offset_angle;
 
 //in degree/s
 float target_yaw_rate = 0.0f;
@@ -82,8 +84,8 @@ void setup()
 	balance_pid_values.Ki = 20.0f;
 	balance_pid_values.Kd = 0.0f;
 
-	yaw_rate_pid_values.Kp = 2.0f;
-	yaw_rate_pid_values.Ki = 1.0f;
+	yaw_rate_pid_values.Kp = 1.0f;
+	yaw_rate_pid_values.Ki = 0.5f;
 	yaw_rate_pid_values.Kd = 0.0f;
 
 	// initialize serial communication
@@ -223,7 +225,7 @@ void loop()
 	{
 		processBluetooth();
 		target_yaw_rate = bt_yaw_rate;
-		target_angle = bt_pitch;
+		target_angle = bt_pitch + offset_angle;
 		//Serial1.print(target_yaw_rate); Serial1.print('\t');
 		//Serial1.print(rot_z); Serial1.print('\t');
 		//Serial1.print(filtered_rot_z); Serial1.print('\t');
