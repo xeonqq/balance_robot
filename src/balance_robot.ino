@@ -10,16 +10,18 @@
 #include "I2Cdev.h"
 #include "MPU6050.h"
 #include <EnableInterrupt.h>
+#include "balance_robot.h"
 #include "PID.h"
 #include "Kalman.h"
 
 #include "motor.h"
-#include "balance_robot.h"
 #include <EEPROM.h>
 #include "EEPROMAnything.h"
 #include "utils.h"
 
 #include "LowPassFilter.h"
+
+#include "Bluetooth.h"
 // class default I2C address is 0x68
 // specific I2C addresses may be passed as a parameter here
 // AD0 low = 0x68 (default for InvenSense evaluation board)
@@ -70,8 +72,6 @@ float target_angle = -0.5f;
 //in degree/s
 float target_yaw_rate = 0.0f;
 
-String inputString = "";         // a string to hold incoming data
-boolean stringComplete = false;  // whether the string is complete
 
 void setup()
 {
@@ -91,7 +91,7 @@ void setup()
 	// it's really up to you depending on your project)
 	Serial.begin(38400);
 	Serial1.begin(115200);  //bluetooth
-	inputString.reserve(20);
+
 	Serial1.println(F("\nPress 'q' to see current PID settings"));
 	Serial1.println(F("Press 'p' ,then type a number to change p value"));
 	Serial1.println(F("Press 'i' ,then type a number to change i value"));
@@ -161,93 +161,6 @@ void yaw_control()
 		yaw_du = pid_yaw.control(target_yaw_rate, filtered_rot_z, G_Dt);
 }
 
-void processBluetooth()
-{
-	while (Serial1.available()) {
-		// get the new byte:
-		char inChar = (char)Serial1.read();
-		// add it to the inputString:
-		inputString += inChar;
-		// Serial.println(inChar);
-		// if the incoming character is a newline, set a flag
-		// so the main loop can do something about it:
-		if (inChar == '\n' || inChar == '\r') {
-			stringComplete = true;
-		}
-	}
-	if (stringComplete) {
-
-		if (inputString.startsWith("p") || inputString.startsWith("P"))
-		{
-			balance_pid_values.Kp = inputString.substring(1).toFloat();
-			Serial.print("P in pid set to:\t"); Serial.println(balance_pid_values.Kp);
-			Serial1.print("P in pid set to:\t"); Serial1.println(balance_pid_values.Kp);
-			pid = PID(balance_pid_values.Kp, balance_pid_values.Ki, balance_pid_values.Kd);
-		}
-		if (inputString.startsWith("i") || inputString.startsWith("I"))
-		{
-			balance_pid_values.Ki = inputString.substring(1).toFloat();
-			Serial.print("I in pid set to:\t"); Serial.println(balance_pid_values.Ki);
-
-			Serial1.print("I in pid set to:\t"); Serial1.println(balance_pid_values.Ki);
-			pid = PID(balance_pid_values.Kp, balance_pid_values.Ki, balance_pid_values.Kd);
-		}
-		if (inputString.startsWith("d") || inputString.startsWith("D"))
-		{
-			balance_pid_values.Kd = inputString.substring(1).toFloat();
-			Serial.print("D in pid set to:\t"); Serial.println(balance_pid_values.Kd, 5);
-			Serial1.print("D in pid set to:\t"); Serial1.println(balance_pid_values.Kd, 5);
-			pid = PID(balance_pid_values.Kp, balance_pid_values.Ki, balance_pid_values.Kd);
-		}
-		if (inputString.startsWith("q") || inputString.startsWith("Q"))
-		{
-			Serial.print("P:"); Serial.print(balance_pid_values.Kp);Serial.print("\tI:"); Serial.print(balance_pid_values.Ki); Serial.print("\tD:");Serial.println(balance_pid_values.Kd, 5);
-			Serial1.print("P:"); Serial1.print(balance_pid_values.Kp);Serial1.print("\tI:"); Serial1.print(balance_pid_values.Ki); Serial1.print("\tD:");Serial1.println(balance_pid_values.Kd, 5);
-		}
-		if (inputString.startsWith("r") || inputString.startsWith("R"))
-		{
-			target_yaw_rate = inputString.substring(1).toFloat();
-			Serial1.print("yaw_rate set to:\t"); Serial1.println(target_yaw_rate);
-
-		}
-
-		if (inputString.substring(0,2) == "yp")
-		{
-			yaw_rate_pid_values.Kp = inputString.substring(2).toFloat();
-			Serial1.print("P in yaw pid set to:\t"); Serial1.println(yaw_rate_pid_values.Kp);
-			pid_yaw = PID(yaw_rate_pid_values.Kp, yaw_rate_pid_values.Ki, yaw_rate_pid_values.Kd);
-		}
-		if (inputString.substring(0,2) == "yi")
-		{
-			yaw_rate_pid_values.Ki = inputString.substring(2).toFloat();
-			Serial1.print("I in yaw pid set to:\t"); Serial1.println(yaw_rate_pid_values.Ki);
-			pid_yaw = PID(yaw_rate_pid_values.Kp, yaw_rate_pid_values.Ki, yaw_rate_pid_values.Kd);
-		}
-		if (inputString.substring(0,2) == "yd")
-		{
-			yaw_rate_pid_values.Kd = inputString.substring(2).toFloat();
-			Serial1.print("D in yaw pid set to:\t"); Serial1.println(yaw_rate_pid_values.Kd);
-			pid_yaw = PID(yaw_rate_pid_values.Kp, yaw_rate_pid_values.Ki, yaw_rate_pid_values.Kd);
-		}
-
-		if (inputString.startsWith("f") || inputString.startsWith("f"))
-		{
-			target_angle = inputString.substring(1).toFloat();
-			Serial1.print("target_angle set to:\t"); Serial1.println(target_angle);
-
-		}
-		/*
-		if (inputString.startsWith("w") || inputString.startsWith("W"))
-		{
-			balance_pid_values.valid = VALID;
-			EEPROM_writeAnything(0, balance_pid_values);
-			Serial1.print(F("saved in EEPROM\n"));
-		}*/
-
-		inputString = "";
-		stringComplete = false;
-	}
-}
 void stopAndReset()
 {
   u = 0;
@@ -306,10 +219,11 @@ void loop()
 	}
 
 
-	if (currentTime - reportTimer >= TASK_1HZ)  
+	if (currentTime - reportTimer >= TASK_20HZ)  
 	{
 		processBluetooth();
-
+		target_yaw_rate = bt_yaw_rate;
+		target_angle = bt_pitch;
 		//Serial1.print(target_yaw_rate); Serial1.print('\t');
 		//Serial1.print(rot_z); Serial1.print('\t');
 		//Serial1.print(filtered_rot_z); Serial1.print('\t');

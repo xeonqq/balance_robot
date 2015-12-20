@@ -11,6 +11,8 @@ static uint32_t reportTimer; // Timer used used to determine when to update the 
 const uint32_t TASK_200HZ = 5;
 //10 ms
 const uint32_t TASK_100HZ = 10;
+//50 ms
+const uint32_t TASK_20HZ = 50;
 //100 ms
 const uint32_t TASK_10HZ = 100;
 //1000 ms
@@ -34,12 +36,25 @@ so
 #define ACC_SENS 1671.8367346938774   //  (16384/9.8)  // =1 m/s^2
 
 
+#define Bluetooth Serial1 
+
+//in degree
+const float MAX_PITCH = 4.5f;
+
+//in degree/s
+const float MAX_YAW_RATE = 200.0f;
 
 
 
 
 
-
-
+#define applyDeadband(value, deadband)  \
+  if(abs(value) < deadband) {           \
+    value = 0;                          \
+  } else if(value > 0){                 \
+    value -= deadband;                  \
+  } else if(value < 0){                 \
+    value += deadband;                  \
+  }
 
 

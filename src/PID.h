@@ -5,15 +5,6 @@
 #ifndef PID_H
 #define PID_H
 
-#define applyDeadband(value, deadband)  \
-  if(abs(value) < deadband) {           \
-    value = 0;                          \
-  } else if(value > 0){                 \
-    value -= deadband;                  \
-  } else if(value < 0){                 \
-    value += deadband;                  \
-  }
-
 
 class PID
 {
