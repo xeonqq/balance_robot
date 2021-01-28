@@ -1,4 +1,6 @@
-##Demo
+For more detailed buid instructions refer to my [blog](https://xeonqq.github.io/design/home-made-self-balance-robot/)
+
+## Demo
 
 The robot can balance itself on two wheels and can handle small disturbance. Further work shall be done on remote controlling to move it.
 
@@ -13,7 +15,7 @@ Use CMake to compile the code
 
 For Arduino Leonardo, I have to use the upload.py for uploading the binary. For other Arduino boards, use "make upload".
 
-##Hardwares
+## Hardwares
 1. [Arduino Leonardo Board](https://www.arduino.cc/en/Main/ArduinoBoardLeonardo)
 
 2. [2 DC Motors: JGA25-371 with encoders](http://world.taobao.com/item/40496339515.htm?fromSite=main&spm=a1z0d.6639537.1997196601.413.U9SqEj)
@@ -30,13 +32,13 @@ For Arduino Leonardo, I have to use the upload.py for uploading the binary. For 
 
 8. [Self designed 3D-printed robot structure](http://www.thingiverse.com/thing:969603)
 
-##Pin Connection
+## Pin Connection
 Refer to [motor.h](https://github.com/xeonqq/balance_robot/blob/kalman/motor.h). Leonardo Serial1 is used to connect the Bluetooth.
 
-##Dependency
+## Dependency
 MPU6050 lib from [i2cdevlib](http://github.com/jrowberg/i2cdevlib.git) and [arduino-pinchangeint](https://code.google.com/p/arduino-pinchangeint/downloads/list). You need to place the libs in the ~/sketchbook/libraries/ folder
 
-##Software Key Components
+## Software Key Components
 1. *Kalman filter*: to fuse the data from accerometer and gyro and output angle. The implementation is referenced from TKJElectronics's [Balanduino](https://github.com/TKJElectronics/KalmanFilter).
 
 2. *PID control*: "velocity" PID which can prevent integral windup (Further theory refer to this [link](http://lorien.ncl.ac.uk/ming/digicont/digimath/dpid1.htm)). Target is to stablize the robot around angle 0. In this version of software I used a two-level controller to gain better performance.
@@ -47,5 +49,5 @@ MPU6050 lib from [i2cdevlib](http://github.com/jrowberg/i2cdevlib.git) and [ardu
 
 5. *Python Debug*: python script analysis/serial_plot.py can plot the data from Serial port in real time. But the message has to follow the format *"name\t value\t name\t value\t...\n"*
 
-##Problem encountered
+## Problem encountered
 This motor can not supply enough torque when the robot deviate its angle too much, so the robot can still fall down when angle error is big. 
